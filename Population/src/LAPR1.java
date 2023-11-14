@@ -1,8 +1,5 @@
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import org.la4j.Matrix;
 import org.la4j.decomposition.EigenDecompositor;
-import org.la4j.linear.LeastSquaresSolver;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -11,7 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
 
-public class ArgsEntry {
+public class LAPR1 {
     static Scanner in = new Scanner(System.in);
     public static void main(String[] args) throws IOException, InterruptedException {
         boolean interactive = true;
@@ -62,7 +59,7 @@ public class ArgsEntry {
         System.out.println();
         double[] vetorinicial = new double[dim];
         for (int x = 0; x < dim; x++) {
-            System.out.print("Introduzir o número de indivíduos reprodutores da faixa etária " + (x+1) + ":\n --> ");
+            System.out.print("Introduzir o número de indivíduos reprodutores da " +(x+1)+ "º faixa etária :\n---> ");
             vetorinicial[x] = in.nextDouble();
         }
         return vetorinicial;
@@ -73,7 +70,7 @@ public class ArgsEntry {
         System.out.println();
         System.out.println();
         for (int x= 0; x < dim; x++) {
-            System.out.print("Introduzir a taxa de fertilidade da faixa etária " + (x+1) + ":\n---> ");
+            System.out.print("Introduzir a taxa de fertilidade da " +(x+1)+ "º faixa etária :\n---> ");
             Leslie[0][x] = in.nextDouble();
         }
         return Leslie;
@@ -82,9 +79,10 @@ public class ArgsEntry {
 
     public static double[][] sobrevivencia(int dim, double[][] Leslie) {
         System.out.println();
+        System.out.println();
         int n = dim - 1;
         for (int x = 0; x < n; x++) {
-            System.out.print("Introduzir a taxa de sobrevivência da faixa etária " + (x+1) + ":\n---> ");
+            System.out.print("Introduzir a taxa de sobrevivência da " +(x+1)+ "º faixa etária :\n---> ");
             Leslie[x + 1][x] = in.nextDouble();
         }
 
@@ -102,25 +100,35 @@ public class ArgsEntry {
             if(!a.contains("="))
             {
                 System.out.println("O formato do ficheiro nao é suportado. Verifique as entradas e reinicie a aplicacao");
+                DeleteTempFile();
                 System.exit(0);
             }
             j++;
         }
         double[] aux1 = new double[arr.length];
+        int maior = -1;
         while (i < arr.length) {
             String o = arr[i];
             String[] aux = o.split("=");
+            String auxiliar = aux[0].substring(1);
+            if(Integer.parseInt(auxiliar)<maior)
+            {
+                System.out.println("O formato do ficheiro encontra-se incorreto. Por favor verifique as entradas e reinicie a aplicação");
+                DeleteTempFile();
+                System.exit(0);
+            }
+            maior = Integer.parseInt(auxiliar);
             aux1[i] = Double.parseDouble(aux[1]);
             i++;
         }
         return aux1;
     }
 
-    public static double[][] ArrayDeLeslie(double[] taxa, double[] nindiv) {
+    public static double[][] ArrayDeLeslie(double[] taxa, double[] numeroindividuos) {
         int j = 0;
-        double[][] Leslie = new double[nindiv.length][nindiv.length];  //a matriz é nxn (quadrada)
-        for (int i = 0; i < nindiv.length; i++) {
-            Leslie[0][i] = nindiv[i];    //preenche a primeira linha
+        double[][] Leslie = new double[numeroindividuos.length][numeroindividuos.length];  //a matriz é nxn (quadrada)
+        for (int i = 0; i < numeroindividuos.length; i++) {
+            Leslie[0][i] = numeroindividuos[i];    //preenche a primeira linha
         }
         while (j < taxa.length) {
             Leslie[j + 1][j] = taxa[j];  //taxa de sobrevivencia na diagonal
@@ -134,39 +142,30 @@ public class ArgsEntry {
 
     public static void distpopulaçao(double[][] Leslie, double[] VectorInicial) throws FileNotFoundException {
         boolean norm = true;
-        System.out.println();
-        System.out.println();
-        System.out.println("Introduza o número de geracoes a estimar!");
-        System.out.println();
-        System.out.println("Exemplo: Caso deseja saber a distribuicao da geracao inicial, deve introduzir o valor 0.");
-        System.out.print("---> ");
+        System.out.print("\n\n\nIntroduza o número de geracoes a estimar!");
+        System.out.print("\n\nExemplo: Caso deseja saber a distribuicao da geracao inicial, deve introduzir o valor 0.\n---> ");
         int g = in.nextInt();
         System.out.println();
         while (g < 0) {
-            System.out.println("Erro! Introduza um número maior ou igual a 0");
+            System.out.print("\nErro! Introduza um número maior ou igual a 0");
             g = in.nextInt();
         }
-        double[] VectorInicial1 = new double[VectorInicial.length];
-        for (int l = 0; l < VectorInicial.length; l++) {
-            VectorInicial1[l] = VectorInicial[l];
-        }
+        double[] auxVetorInicial = VectorInicial;
+
         double[][] distpopulaçao= new double[g + 1][VectorInicial.length];
         for (int y = 0; y < VectorInicial.length; y++) {
             distpopulaçao[0][y] = VectorInicial[y];
         }
         for (int x = 1; x <= g; x++) {
-            VectorInicial = multiplyMatricesVectors(potência(Leslie, (x - 1)), VectorInicial1);
+            VectorInicial = multiplyMatricesVectors(potência(Leslie, (x - 1)), auxVetorInicial);
             for (int y = 0; y < VectorInicial.length; y++) {
                 distpopulaçao[x][y] = VectorInicial[y];
             }
         }
-        double[] populaçao = populaçao(Leslie, VectorInicial1, g);
+        double[] populaçao = populaçao(Leslie, auxVetorInicial, g);
         for (int n = 0; n <= g; n++) {
-            System.out.println();
-            System.out.println();
-            System.out.println("///////////////////////////////////////////////////////[" + n + "]////////////////////////////////////////////////////");
-            System.out.println();
-            System.out.println("Dados relativos à distribuicao da populacao na geracao: " + n);
+            System.out.print("\n\n\n----------------------------------------------------[" + n + "]----------------------------------------------------");
+            System.out.print("\n\nDados relativos à distribuicao da populacao na geracao: " + n + "\n");
             for (int k = 0; k < VectorInicial.length; k++) {
                 System.out.print("A populacao da " + (k + 1) + "º faixa etária é ");
                 System.out.printf("%.2f",distpopulaçao[n][k]);
@@ -183,13 +182,8 @@ public class ArgsEntry {
     //------Dimensão da população----------------------------------------------------------------------------------------------------------------------------------------------------------------------O
 
     public static void dimpopulaçao(double[][] Leslie, double[] VectorInicial) throws FileNotFoundException {
-        boolean dim = true;
-        System.out.println();
-        System.out.println();
-        System.out.println("Introduza um valor, referente a uma geracao, para o qual deseja calcular a dimensao da populacao!");
-        System.out.println();
-        System.out.println("Exemplo: Caso deseja saber a dimensao da geracao inicial, deve introduzir o valor 0.");
-        System.out.print("---> ");
+        System.out.print("\n\n\nIntroduza um valor, referente a uma geracao, para o qual deseja calcular a dimensao da populacao!");
+        System.out.println("\n\nExemplo: Caso deseja saber a dimensao da geracao inicial, deve introduzir o valor 0.\n---> ");
         int t = in.nextInt();
         System.out.println();
         while (t < 0) {
@@ -204,8 +198,8 @@ public class ArgsEntry {
             System.out.printf("%.2f", populaçao[i]);
             System.out.println();
         }
-            System.out.println();
-            System.out.println();
+        System.out.println();
+        System.out.println();
 
 
     }
@@ -214,12 +208,8 @@ public class ArgsEntry {
 
     public static void taxavarpop(double[][] Leslie, double[] VectorInicial) throws FileNotFoundException{
         boolean dim = true;
-        System.out.println();
-        System.out.println();
-        System.out.println("Introduza um valor, referente a uma geracao, para o qual deseja calcular a taxa de variacao da populacao!");
-        System.out.println();
-        System.out.println("Exemplo: Caso deseja saber a dimensao da geracao inicial, deve introduzir o valor 0.");
-        System.out.print("---> ");
+        System.out.println("\n\n\nIntroduza um valor, referente a uma geracao, para o qual deseja calcular a taxa de variacao da populacao!");
+        System.out.println("\n\nExemplo: Caso deseja saber a dimensao da geracao inicial, deve introduzir o valor 0.\n---> ");
         int t = in.nextInt();
         System.out.println();
         while (t < 0) {
@@ -263,9 +253,9 @@ public class ArgsEntry {
     public static double[] multiplyMatricesVectors(double[][] Matrix, double[] Vector) {
         int dim = Vector.length;
         double[] product = new double[dim];
-        for (int i = 0; i < dim; i++) {
-            for (int j = 0; j < dim; j++) {
-                product[i] = product[i] + Matrix[i][j] * Vector[j];
+        for (int x = 0; x < dim; x++) {
+            for (int y = 0; y < dim; y++) {
+                product[x] = product[x] + Matrix[x][y] * Vector[y];
             }
         }
         return product;
@@ -287,10 +277,10 @@ public class ArgsEntry {
 
     public static double[][] multiplyMatrices(double[][] firstMatrix, double[][] secondMatrix) {
         double[][] product = new double[firstMatrix.length][firstMatrix.length];
-        for (int i = 0; i < firstMatrix.length; i++) {
-            for (int j = 0; j < firstMatrix.length; j++) {
+        for (int x = 0; x < firstMatrix.length; x++) {
+            for (int y = 0; y < firstMatrix.length; y++) {
                 for (int p = 0; p < firstMatrix.length; p++) {
-                    product[i][j] += firstMatrix[i][p] * secondMatrix[p][j];
+                    product[x][y] += firstMatrix[x][p] * secondMatrix[p][y];
                 }
             }
         }
@@ -298,17 +288,6 @@ public class ArgsEntry {
     }
 
     //------Gráficos-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------O
-    /*public static void Gráficos(int t, String especie) throws IOException, InterruptedException {
-        int contador=0;
-        System.out.println("\n" + "\n");
-        System.out.println("//////////////////////////////////////////////////[GRÁFICOS]////////////////////////////////////////////////////");
-        System.out.println();
-        while(contador<4)
-        {
-            Grafico(contador,t, especie);
-            contador++;
-        }
-    }*/
 
     public static void Grafico(int contador, String especie, double[][] Leslie, double[] vetorinicial) throws IOException, InterruptedException{
         int type;
@@ -343,23 +322,22 @@ public class ArgsEntry {
                 break;
 
         }
-            type = Type();
-            Mostra(contador,especie);
-            Graphs(contador, type, especie);
-            OutputGraphs(contador);
-            Guardar(contador, type, especie);
-            boolean a = (new File("script.sh").delete());
+        type = Type();
+        Mostra(contador,especie);
+        Graphs(contador, type, especie);
+        OutputGraphs(contador);
+        Guardar(contador, type, especie);
+        boolean a = (new File("script.sh").delete());
 
     }  //4 graficos
 
     public static int Type() {
         int formato;
-        System.out.print("Introduza o número que corresponde ao formato desejado (1-PNG) (2-TXT) (3-EPS): ");
+        System.out.print("\nIntroduza o número que corresponde ao formato desejado (1-PNG) (2-TXT) (3-EPS): ");
         do {
             formato = in.nextInt();
-            System.out.print("\n");
             if (formato != 1 && formato != 2 && formato != 3) {
-                System.out.print("Não é um formato de ficheiro válido, tente outro (1-PNG) (2-TXT) (3-EPS): ");
+                System.out.print("\nNão é um formato de ficheiro válido, tente outro (1-PNG) (2-TXT) (3-EPS): ");
             }
         } while (formato != 1 && formato != 2 && formato != 3);
         System.out.print("\n");
@@ -418,7 +396,7 @@ public class ArgsEntry {
                 write.print("'" + var[5] + "' using 1:2 with lines t \"\" ");
             } else {
                 for (int i = 0; i < geracoes.length; i++) {
-                    write.print("'" + var[5] + "' using 1:" + (i + 2) + " t " + "\"" + (i + 1) + "º faixa etária  \" " + " with lines linestyle " + (i + 1));
+                    write.print("'" + var[5] + "' using 1:" + (i + 2) + " t " + "\"" + (i + 1) + "º faixa etária \" " + " with lines linestyle " + (i + 1));
                     if (i != (geracoes.length - 1)) {
                         write.print(", ");
                     }
@@ -515,12 +493,10 @@ public class ArgsEntry {
         String[] files = {"dimpopulacao.txt","dispopulacao.txt","dispopulacaonorm.txt","taxavarpop.txt","script.sh","show.png"};
         for(int i=0;i<files.length;i++)
         {
-            if(!new File(files[i]).delete())
-            {
-                System.out.println("ERRO : Apagar ficheiro " + files[i]);
-            }
+            new File(files[i]).delete();
         }
     }
+
 
     //------Escrita Em/De Ficheiros---------------------------------------------------------------------------------------------------------------------------------------------------------------------O
 
@@ -616,56 +592,42 @@ public class ArgsEntry {
     //------Auxiliar Distribuição--------------------------------------------------------------------------------------------------------------------------------------------------------------------O
 
     public static void distribuicaopop(double[][] Leslie, double[] VectorInicial, int g, boolean norm) throws FileNotFoundException {
-        double[] VectorInicial1 = new double[VectorInicial.length];
+        double[] auxVetorInicial = new double[VectorInicial.length];
         for (int l = 0; l < VectorInicial.length; l++) {
-            VectorInicial1[l] = VectorInicial[l];
+            auxVetorInicial[l] = VectorInicial[l];
         }
         double[][] distpopulaçao = new double[g + 1][VectorInicial.length];
         for (int y = 0; y < VectorInicial.length; y++) {
             distpopulaçao[0][y] = VectorInicial[y];
         }
         for (int x = 1; x <= g; x++) {
-            VectorInicial = multiplyMatricesVectors(potência(Leslie, (x - 1)), VectorInicial1);
+            VectorInicial = multiplyMatricesVectors(potência(Leslie, (x - 1)), auxVetorInicial);
             for (int y = 0; y < VectorInicial.length; y++) {
                 distpopulaçao[x][y] = VectorInicial[y];
             }
         }
-        double[] populaçao = populaçao(Leslie, VectorInicial1, g);
+        double[] populaçao = populaçao(Leslie, auxVetorInicial, g);
         TempToGraphsDis(distpopulaçao,populaçao,norm,VectorInicial.length,g);
     }  //distribuicao normalizada e nao normalizada para nao interativo
 
     //------Assintotico------------------------------------------------------------------------------------------------------------------------------------------------------------------------------O
 
     public static void Assimtotico(double[][] Leslie) {
+        Matrix maatriz = Matrix.from2DArray(Leslie);
+        valorProprio(maatriz);
+    }
 
-
-
-            Matrix maatriz = Matrix.from2DArray(Leslie);
-
-            valorProprio(maatriz);
-
-
-        }
-
-        public static void valorProprio(Matrix matrix) {
-
-            int coluna = 0;
-            double soma = 0;
-
-            EigenDecompositor decomp = new EigenDecompositor(matrix);
-
-            Matrix[] result = decomp.decompose();
-
-            Matrix vetor = result[0];
-            Matrix valor = result[1];
-
-            double assimtotico = valor.max();
-
-            System.out.println();
-            System.out.println();
-            System.out.print("A taxa de crescimento assimtótico é = ");
-            System.out.printf("%.4f",assimtotico);
-            System.out.println();
+    public static void valorProprio(Matrix matrix) {
+        int coluna = 0;
+        double soma = 0;
+        EigenDecompositor decomp = new EigenDecompositor(matrix);
+        Matrix[] result = decomp.decompose();
+        Matrix vetor = result[0];
+        Matrix valor = result[1];
+        double assimtotico = valor.max();
+        System.out.print("\n\nA taxa de crescimento assimtótico é = ");
+        System.out.printf("%.4f",assimtotico);
+        System.out.println();
 
             /*if(assimtotico<1)
             {
@@ -684,96 +646,65 @@ public class ArgsEntry {
                 System.out.println("A populacao desta espécie tem tendência a estagnar. Após geracoes infinitas a geracao seguinte tende a ter populacao igual à anterior.");
 
             }*/
-            System.out.println();
-
-            double vetoresProprios[][] = vetor.toDenseMatrix().toArray();
-
-
-            double valoresProprios[][] = valor.toDenseMatrix().toArray();
-
-
-            for (int a = 0; a < valoresProprios.length; a++) {
-
-                for (int b = 0; b < valoresProprios.length; b++) {
-
-                    if (assimtotico == valoresProprios[a][b]) {
-
-                        coluna = b;
-
-                    }
+        System.out.println();
+        double vetoresProprios[][] = vetor.toDenseMatrix().toArray();
+        double valoresProprios[][] = valor.toDenseMatrix().toArray();
+        for (int a = 0; a < valoresProprios.length; a++) {
+            for (int b = 0; b < valoresProprios.length; b++) {
+                if (assimtotico == valoresProprios[a][b]) {
+                    coluna = b;
                 }
-
             }
-
-            for (int j = 0; j < vetoresProprios.length; j++) {
-
-                soma = vetoresProprios[j][coluna] + soma;
-            }
-
-
-
-
-
-            double[] divisoes = new double[vetoresProprios.length];
-
-            for (int con = 0; con < divisoes.length; con++) {
-
-                divisoes[con] = vetoresProprios[con][coluna] / soma;
-
-            }
-            System.out.print("Vetor Próprio = (");
-            System.out.printf("%.2f",divisoes[0]*100);
-
-            for(int i = 1; i < divisoes.length; i++)
-            {
-                System.out.print(", ");
-                System.out.printf("%.2f",divisoes[i]*100);
-            }
-            System.out.println(")");
-
+        }
+        for (int j = 0; j < vetoresProprios.length; j++) {
+            soma = vetoresProprios[j][coluna] + soma;
+        }
+        double[] divisoes = new double[vetoresProprios.length];
+        for (int con = 0; con < divisoes.length; con++) {
+            divisoes[con] = vetoresProprios[con][coluna] / soma;
 
         }
+        System.out.print("\nVetor Próprio = (");
+        System.out.printf("%.2f",divisoes[0]*100);
+        for(int i = 1; i < divisoes.length; i++) {
+            System.out.print(", ");
+            System.out.printf("%.2f",divisoes[i]*100);
+        }
+        System.out.println(")");
+    }
 
     //------Modos------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------O
-
     public static void NaoInterativoTxt(String[] args, boolean interactive) throws IOException {
-        boolean valorvetorprop = false, dimpopulacao = false, variacaodapop = false;  //("-e,-v,-r")
+        boolean valorvetorproprio = false, dimpopulacao = false, varpopulacao = false;  //("-e,-v,-r")
         int formatograph=1, numbergen=1;
-        for(int i=0;i<args.length;i++)
-        {
-            if(args[i].compareTo("-t")==0)
-            {
+        for(int i=0;i<args.length;i++) {
+            if(args[i].compareTo("-t")==0) {
                 try {
                     numbergen = Integer.parseInt(args[i + 1]);
-                }catch(NumberFormatException e)
+                } catch(NumberFormatException e)
                 {
                     System.out.println("\"" + args[i+1] + "\"" + " nao é um formato válido. Introduza um valor inteiro positivo");
                     System.exit(0);
                 }
 
             }
-            if(args[i].compareTo("-g")==0)
-            {
-                if(args[i+1].compareTo("1")==0 || args[i+1].compareTo("2")==0 || args[i+1].compareTo("3")==0)
-                {
+            if(args[i].compareTo("-g")==0) {
+                if(args[i+1].compareTo("1")==0 || args[i+1].compareTo("2")==0 || args[i+1].compareTo("3")==0) {
                     formatograph = Integer.parseInt(args[i + 1]);
                 }
-                else{
+                else {
                     System.out.println("\"" + args[i+1] + "\"" + " nao é um formato válido. Introduza um valor inteiro positivo, entre 1 e 3");
                     System.exit(0);
                 }
             }
-            if(args[i].compareTo("-e")==0)
-            {
-                valorvetorprop = true;
+            if(args[i].compareTo("-e")==0) {
+                valorvetorproprio = true;
             }
-            if(args[i].compareTo("-v")==0)
-            {
+            if(args[i].compareTo("-v")==0) {
                 dimpopulacao = true;
             }
-            if(args[i].compareTo("-r")==0)
-            {
-                variacaodapop = true;
+            if(args[i].compareTo("-r")==0) {
+                varpopulacao = true;
             }
         }
         String ficheiroentrada = args[args.length-2]; //penultima posicao
@@ -795,17 +726,17 @@ public class ArgsEntry {
                 }
             }
             double[] vetor = LeituraEmArrays(vetores);  //Vetor Inicial
-            if(vetor.length>200)  //ERRO CASO TENHA MAIS QUE 200 CLASSES
-            {
-                System.out.println("Erro: O número de classes introduzidas é superior ao máximo definido. ");
+            if(vetor.length>200) { //ERRO CASO TENHA MAIS QUE 200 CLASSES
+                System.out.print("\nErro: O número de classes introduzidas é superior ao máximo definido. ");
+                System.exit(0);
             }
             else {
-                int index = ficheirosaida.indexOf(".");
+                int index = ficheiroentrada.indexOf(".");
                 boolean norm = false;
-                String especie = ficheirosaida.substring(0,index);
-                double[] taxadesobre = LeituraEmArrays(sobrevivencia);
-                double[] fecundidades = LeituraEmArrays(fecundidade);
-                double[][] Leslie = ArrayDeLeslie(taxadesobre, fecundidades);  //Matriz de Leslie
+                String especie = ficheiroentrada.substring(0,index);
+                double[] taxasobrevivencia = LeituraEmArrays(sobrevivencia);
+                double[] taxafecundidade = LeituraEmArrays(fecundidade);
+                double[][] Leslie = ArrayDeLeslie(taxasobrevivencia, taxafecundidade);  //Matriz de Leslie
                 distribuicaopop(Leslie, vetor, numbergen,norm);
                 norm = true;
                 distribuicaopop(Leslie, vetor, numbergen,norm);
@@ -813,8 +744,8 @@ public class ArgsEntry {
                 write.print("\n" + "\n");
                 write.println("Matriz de Leslie");
                 write.println("----------------");
-                for (int i = 0; i < fecundidades.length; i++) {
-                    for (int j = 0; j < fecundidades.length; j++) {
+                for (int i = 0; i < taxafecundidade.length; i++) {
+                    for (int j = 0; j < taxafecundidade.length; j++) {
                         write.printf("%.2f", Leslie[i][j]);
                         write.print(" ");
                     }
@@ -825,10 +756,8 @@ public class ArgsEntry {
                 if (dimpopulacao) {
                     boolean dim = true;
                     double[] populacao = populaçao(Leslie, vetor, numbergen);
-
                     TempToGraphsDim(populacao, dim, numbergen);
                     Graphs(0, formatograph, especie);
-
                     write.print("------Número Total De Indivíduos Reprodutores------" + "\n");
                     write.print("\n");
                     write.print("( t, Nt)" + "\n");
@@ -840,20 +769,16 @@ public class ArgsEntry {
                     write.print("\n" + "\n" + "\n");
                 }
                 //------------------------------------------------Taxa de Variação De Indivíduos Reprodutores
-                if (variacaodapop) {
+                if (varpopulacao) {
                     boolean dim = false;
                     double[] populacao = populaçao(Leslie, vetor, numbergen);
-
                     TempToGraphsDim(populacao, dim, numbergen);
-
                     if (numbergen > 0) {
                         Graphs(1, formatograph, especie);
                     }
-
                     write.print("----Taxa de Variação De Indivíduos Reprodutores----" + "\n");
                     write.print("\n");
-                    write.print("( t, Δt)" + "\n");
-
+                    write.print("( t, Delta t)" + "\n");
                     for (int i = 0; i < numbergen; i++) {
                         write.print("( " + i + ", ");
                         write.printf("%.2f", (populacao[i + 1] / populacao[i]));
@@ -862,26 +787,22 @@ public class ArgsEntry {
                     write.print("\n" + "\n" + "\n");
                 }
 
-                //------------------------------------------------Distribuição Da Espécie Por Classes
+                //------------------------------------------------Distribuição Da Espécie Por Faixas Etárias
                 {
                     File dispop = new File("dispopulacao.txt");
                     Scanner in = new Scanner(dispop);
-
-                    write.println("--------Distribuição Da Espécie Por Classes--------" + "\n");
+                    write.println("--------Distribuição Da Espécie Por Faixas Etárias--------" + "\n");
                     write.print("( t");
-
-                    String[] arr = (in.nextLine()).split(" ");  //Descobrir o numero de classes
+                    String[] arr = (in.nextLine()).split(" ");  //Descobrir o numero de Faixas Etárias
                     for (int i = 0; i < arr.length; i++) {
                         write.print(", x" + i);
                     }
                     write.println(")");
-
                     write.print("( 0");
                     for (int k = 1; k < arr.length; k++) {
                         write.print(", " + arr[k]);
                     }
                     write.print(")" + "\n");
-
                     for (int j = 1; j <= numbergen; j++) {
                         write.print("( " + j);
                         String[] aux = (in.nextLine()).split(" ");
@@ -894,26 +815,22 @@ public class ArgsEntry {
                     write.print("\n" + "\n" + "\n");
                 }
 
-                //------------------------------------------------Distribuição Da Espécie Por Classes (Normalizado)
+                //------------------------------------------------Distribuição Da Espécie Por Faixas Etárias (Normalizado)
                 {
                     File dispopnorm = new File("dispopulacaonorm.txt");
                     Scanner ler = new Scanner(dispopnorm);
-
-                    write.println("-Distribuição Da Espécie Por Classes (Normalizado)-" + "\n");
+                    write.println("-Distribuição Da Espécie Por Faixas Etárias (Normalizado)-" + "\n");
                     write.print("( t");
-
                     String[] zzz = (ler.nextLine()).split(" ");  //Descobrir o numero de classes
                     for (int i = 0; i < zzz.length; i++) {
                         write.print(", x" + i);
                     }
                     write.println(")");
-
                     write.print("( 0");
                     for (int k = 1; k < zzz.length; k++) {
                         write.print(", " + zzz[k]);
                     }
                     write.print(")" + "\n");
-
                     for (int j = 1; j <= numbergen; j++) {
                         write.print("( " + j);
                         String[] aux1 = (ler.nextLine()).split(" ");
@@ -927,19 +844,15 @@ public class ArgsEntry {
                 }
 
                 //------------------------------------------------Assintotico
-                if (valorvetorprop) {
+                if (valorvetorproprio) {
                     int coluna = 0;
                     double soma = 0;
                     Matrix matriz = Matrix.from2DArray(Leslie);
                     EigenDecompositor decomp = new EigenDecompositor(matriz);
-
                     Matrix[] result = decomp.decompose();
-
                     Matrix vector = result[0];
                     Matrix valor = result[1];
-
                     double assimtotico = valor.max();
-
                     write.println();
                     write.println();
                     write.print("A taxa de crescimento assimtótico é = ");
@@ -960,41 +873,24 @@ public class ArgsEntry {
 
                     }*/
                     write.println();
-
                     double vetoresProprios[][] = vector.toDenseMatrix().toArray();
-
-
                     double valoresProprios[][] = valor.toDenseMatrix().toArray();
-
-
                     for (int a = 0; a < valoresProprios.length; a++) {
-
                         for (int b = 0; b < valoresProprios.length; b++) {
-
                             if (assimtotico == valoresProprios[a][b]) {
-
                                 coluna = b;
-
                             }
                         }
                     }
-
                     for (int j = 0; j < vetoresProprios.length; j++) {
-
                         soma = vetoresProprios[j][coluna] + soma;
                     }
-
-
                     double[] divisoes = new double[vetoresProprios.length];
-
                     for (int con = 0; con < divisoes.length; con++) {
-
                         divisoes[con] = vetoresProprios[con][coluna] / soma;
-
                     }
                     write.print("Vetor Próprio = (");
                     write.printf("%.2f", divisoes[0] * 100);
-
                     for (int i = 1; i < divisoes.length; i++) {
                         write.print(", ");
                         write.printf("%.2f", divisoes[i] * 100);
@@ -1002,18 +898,13 @@ public class ArgsEntry {
                     write.println(")");
                     write.println();
                 }
-
                 write.close();
-
                 Graphs(2, formatograph, especie);
                 Graphs(3, formatograph, especie);
             }
-        }catch (FileNotFoundException | InterruptedException e)
-        {
+        }catch (FileNotFoundException | InterruptedException e) {
             System.out.println("O ficheiro introduzido nao existe. Verifique o nome e se este se encontra no mesmo local que a aplicacao.");
         }
-
-
     }
 
     public static void InterativoTxt(String[]args, boolean interactive) throws IOException, InterruptedException {
@@ -1041,8 +932,7 @@ public class ArgsEntry {
             abertura();
             String especie = especie();
             menu(Leslie,vetor,especie);
-        }catch(FileNotFoundException e)
-        {
+        }catch(FileNotFoundException e) {
             System.out.println("O ficheiro introduzido nao existe. Verifique o nome e se este se encontra no mesmo local que a aplicacao.");
         }
     }
@@ -1069,15 +959,13 @@ public class ArgsEntry {
         System.out.print("\nSempre que for necessário inserir números com parte decimal, utilize a vírgula.\n\n");
     }  //Titulo da app
 
-    public static String especie()  //para saber o nome da especie
-    {
+    public static String especie() {  //para saber o nome da especie
         System.out.print("Introduza o nome da especie/populacao que vai ser estudada: ");
         String especie = in.nextLine();   //Nome da Especie
         return  especie;
     }
 
-    public static int geracoes()   //quantos geracoes deseja calcular
-    {
+    public static int geracoes() {  //quantos geracoes deseja calcular
         System.out.println();
         System.out.println();
         System.out.println("Introduza o número de geracoes a estimar!");
@@ -1091,16 +979,16 @@ public class ArgsEntry {
 
     public static int menu (double[][] Leslie, double[] vetorinicial, String especie) throws IOException, InterruptedException {
         System.out.println();
-        System.out.println("[------------------------MENU PRINCIPAL------------------------]");
+        System.out.println("[------------------------Menu Principal------------------------]");
         System.out.println();
-        System.out.println("0 ---> INTRODUZIR/MUDAR OS DADOS");
-        System.out.println("1 ---> DISTRIBUICAO NORMALIZADA E NAO NORMALIZADA DA POPULAÇAO");
-        System.out.println("2 ---> DIMENSÃO DA POPULACÃO");
-        System.out.println("3 ---> TAXA DE VARIACAO");
-        System.out.println("4 ---> COMPORTAMENTO ASSIMTÓTICO");
-        System.out.println("5 ---> EXECUCAO DE TODAS AS FUNCIONALIDADES");
-        System.out.println("6 ---> GRÁFICOS");
-        System.out.println("7 ---> SAIR DA APLICACAO");
+        System.out.println("0 ---> Introduzir/Mudar Os Dados");
+        System.out.println("1 ---> Distribuição Normalizada E Nao Normalizada Da Populacao");
+        System.out.println("2 ---> Dimensao Da Populacao");
+        System.out.println("3 ---> Taxa De Variacao");
+        System.out.println("4 ---> Comportamento Assimtotico");
+        System.out.println("5 ---> Execucao De Todas As Funcionalidades");
+        System.out.println("6 ---> Graficos");
+        System.out.println("7 ---> Sair Da Aplicacao");
         System.out.print("\nSelecione uma das opções apresentadas no menu.\n---> ");
         int number = in.nextInt();
         while ((number<0)  || (number>7)){
@@ -1123,26 +1011,22 @@ public class ArgsEntry {
                 break;
             case 6: Clear(); menugráficos(Leslie, vetorinicial, especie);
                 break;
-            case 7:System.exit(0);
+            case 7:DeleteTempFile();System.exit(0);
                 break;
             default:
-
-
-
         }
         return number;
     }   //menu principal
 
     public static void submenu(int opcao, double[][] Leslie, double[] vetorinicial, String especie) throws IOException, InterruptedException {
-
         for (int x=0; x<4; x++) {
             System.out.println("");
         }
-        System.out.println("[---------------SUBMENU---------------]");
+        System.out.println("[---------------Submenu---------------]");
         System.out.println();
-        System.out.println("1 ---> REPETIR COM MUDANÇA DE GERACAO");
-        System.out.println("2 ---> VOLTAR AO MENU INICIAL");
-        System.out.println("3 ---> SAIR DA APLICACAO");
+        System.out.println("1 ---> Repetir Com Mudanca De Geracao");
+        System.out.println("2 ---> Voltar Ao Menu Principal");
+        System.out.println("3 ---> Sair Da Aplicacao");
         System.out.print("\nSelecione uma das opções apresentadas no menu.\n---> ");
         int number = in.nextInt();
         while ((number<=0)  || (number>3)){
@@ -1164,18 +1048,19 @@ public class ArgsEntry {
             }
                 break;
             case 2: Clear();menu(Leslie, vetorinicial,especie); break;
-            case 3: System.exit(0); break;
+            case 3: DeleteTempFile();System.exit(0); break;
         }
     }   //submenu o que aparece depois de cada operacao
 
     public static void menugráficos (double[][] Leslie, double[] vetorinicial, String especie) throws IOException, InterruptedException {
+        System.out.println("\n"+ "[---------------Graficos---------------]" + "\n");
         System.out.print("\n \nSelecione o gráfico que deseja visualizar:\n");
-        System.out.println("1 ---> DISTRIBUIÇÃO NÃO NORMALIZADA DA POPULAÇÃO EM FUNÇAO DO TEMPO");
-        System.out.println("2 ---> DISTRIBUIÇÃO NORMALIZADA DA POPULAÇÃO EM FUNÇAO DO TEMPO");
-        System.out.println("3 ---> DIMENSÃO DA POPULAÇÃO EM FUNÇAO DO TEMPO");
-        System.out.println("4 ---> TAXA DE VARIAÇÃO DA POPULAÇÃO EM FUNÇAO DO TEMPO");
-        System.out.println("5 ---> VOLTAR AO MENU INICIAL");
-        System.out.println("6 ---> SAIR DA APLICAÇÃO");
+        System.out.println("1 ---> Distribuicao Nao Normalizada Da Populacao Em Funcao Do Tempo");
+        System.out.println("2 ---> Distribuicao Normalizada Da Populacao Em Funcao Do Tempo");
+        System.out.println("3 ---> Dimensao Da Populacao Em Funcao Do Tempo");
+        System.out.println("4 ---> Taxa Da Variacao Da Populacao Em Funcao Do Tempo");
+        System.out.println("5 ---> Voltar Ao Menu Principal");
+        System.out.println("6 ---> Sair Da Aplicacao");
         System.out.println("");
         System.out.print("\nSelecione uma das opções apresentadas no menu.\n---> ");
         int number = in.nextInt();
@@ -1189,16 +1074,16 @@ public class ArgsEntry {
             case 3: Clear();Grafico(0,especie,Leslie,vetorinicial);menugráficos(Leslie, vetorinicial, especie);
             case 4: Clear();Grafico(1,especie,Leslie,vetorinicial);menugráficos(Leslie, vetorinicial, especie);
             case 5: Clear();menu(Leslie, vetorinicial,especie);
-            case 6:System.exit(0);
+            case 6:DeleteTempFile();System.exit(0);
         }
     }   //menu para os graficos
 
     public static void introducaoDados (double[][] Leslie,double[] vetorinicial,String especie) throws IOException, InterruptedException {
         System.out.println("[-----------Introduzir Dados-----------]");
         System.out.println();
-        System.out.println("1 ---> FICHEIRO DE TEXTO");
-        System.out.println("2 ---> INTRODUZIR MANUAL");
-        System.out.println("3 ---> VOLTAR AO MENU PRINCIPAL");
+        System.out.println("1 ---> Ficheiro De Texto");
+        System.out.println("2 ---> Introdução Manual");
+        System.out.println("3 ---> Voltar ao Menu Principal");
         System.out.print("\nSelecione uma das opções apresentadas no menu.\n---> ");
         int number = in.nextInt();
         while ((number<=0)  || (number>3)){
@@ -1208,9 +1093,11 @@ public class ArgsEntry {
         switch (number) {
             case 1: Clear();
                 in.nextLine();
-                System.out.println("\n" + "\n");
+                System.out.print("\n\n" + "\n");
                 System.out.println("Introduza o nome do ficheiro que deseja carregar. Verifique que se encontra presente na mesma pasta que a aplicação");
+                System.out.print("--->");
                 String ficheiroentrada = in.nextLine();
+                System.out.println();
                 try {
                     File evolucao = new File(ficheiroentrada);  //file.txt ---- nomeficheiro
                     Scanner sc = new Scanner(evolucao);
@@ -1235,7 +1122,7 @@ public class ArgsEntry {
                     System.out.println("O ficheiro introduzido nao existe. Verifique o nome e se este se encontra no mesmo local que a aplicacao.");
                 }
                 break;
-            case 2: Clear();in.nextLine();
+            case 2:Clear();in.nextLine();
                 especie = especie();
                 int dim =dimensao();
                 vetorinicial = vetorinicial(dim);
@@ -1250,11 +1137,8 @@ public class ArgsEntry {
     //------Clear------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------O
 
     public static void Clear() throws IOException {
-        for(int i=0;i<80;i++)
-        {
+        for(int i=0;i<80;i++) {
             System.out.println();
         }
     }
 }
-
-
